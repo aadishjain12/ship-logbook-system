@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ship Logbook Report</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-6">
+  <div class="max-w-7xl mx-auto bg-white p-8 rounded shadow-md">
+    <h1 class="text-3xl font-bold mb-6 text-center">📊 Ship Logbook Report</h1>
+
+    <!-- Chart Section -->
+    <div class="mb-10">
+      <h2 class="text-xl font-semibold mb-4">📈 Speed Over Time</h2>
+      <canvas id="speedChart" class="w-full h-64"></canvas>
+    </div>
+
+    <!-- Map Section -->
+    <div class="mb-10">
+      <h2 class="text-xl font-semibold mb-4">🗺 Ship Location Map</h2>
+      <div id="map" class="w-full h-[500px] rounded border"></div>
+    </div>
+
+    <!-- Table Section -->
+    <div>
+      <h2 class="text-xl font-semibold mb-4">📋 Detailed Log Entries</h2>
+      <div class="overflow-x-auto">
+        {{ html|safe }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart Script -->
+  <script>
+    const ctx = document.getElementById('speedChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ chart_data.labels|tojson }},
+        datasets: [{
+          label: 'Speed (knots)',
+          data: {{ chart_data.speeds|tojson }},
+          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+          tension: 0.3,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true }
+        },
+        scales: {
+          y: {
+            title: { display: true, text: 'Speed (knots)' }
+          },
+          x: {
+            title: { display: true, text: 'Date' }
+          }
+        }
+      }
+    });
+  </script>
+
+  <!-- Leaflet Map Script -->
+  <script>
+    const map = L.map('map').setView([20.0, 75.0], 4);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const mapData = {{ map_data|tojson }};
+    mapData.forEach(entry => {
+      if (entry.lat && entry.lon) {
+        L.marker([entry.lat, entry.lon])
+          .addTo(map)
+          .bindPopup(entry.info);
+      }
+    });
+  </script>
+</body>
+</html>

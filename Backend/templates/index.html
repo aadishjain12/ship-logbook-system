@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ship Logbook System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+
+  <div class="max-w-5xl mx-auto p-6">
+    <h1 class="text-4xl font-bold text-center mb-8">🛳️ Automated Ship Logbook System</h1>
+
+    <!-- Input Section -->
+    <div class="bg-white p-6 rounded shadow mb-10">
+      <h2 class="text-xl font-semibold mb-4">📥 Enter Voice Log</h2>
+      <textarea id="voice_log" class="w-full p-3 border border-gray-300 rounded mb-4"
+        placeholder="e.g., Reduce speed to 14 knots due to fog"></textarea>
+      <div class="flex gap-4">
+        <button onclick="startListening()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+          🎙 Speak
+        </button>
+        <button onclick="submitLog()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+          ➕ Submit Log
+        </button>
+        <button onclick="window.location.href='/report'" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+          📊 View Full Report
+        </button>
+      </div>
+      <div id="response" class="mt-4 text-sm text-gray-700"></div>
+    </div>
+
+    <!-- Log Entries Section -->
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">📄 Recent Log Entries</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full table-auto border-collapse border border-gray-200 text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="border px-4 py-2">Timestamp</th>
+              <th class="border px-4 py-2">Ship ID</th>
+              <th class="border px-4 py-2">Lat</th>
+              <th class="border px-4 py-2">Lon</th>
+              <th class="border px-4 py-2">Speed</th>
+              <th class="border px-4 py-2">Weather</th>
+              <th class="border px-4 py-2">Voice Log</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr class="hover:bg-gray-50">
+              <td class="border px-4 py-2">{{ log.timestamp }}</td>
+              <td class="border px-4 py-2">{{ log.ship_id }}</td>
+              <td class="border px-4 py-2">{{ log.latitude }}</td>
+              <td class="border px-4 py-2">{{ log.longitude }}</td>
+              <td class="border px-4 py-2">{{ log.speed }}</td>
+              <td class="border px-4 py-2">{{ log.weather }}</td>
+              <td class="border px-4 py-2">{{ log.voice_log }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function startListening() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("voice_log").value = transcript;
+      };
+
+      recognition.onerror = function(event) {
+        alert("Voice recognition failed: " + event.error);
+      };
+    }
+
+    async function submitLog() {
+      const voice_log = document.getElementById("voice_log").value;
+      const res = await fetch("/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voice_log })
+      });
+      const data = await res.json();
+
+      const responseDiv = document.getElementById("response");
+      if (data.status === "success") {
+        responseDiv.innerHTML = `<div class="text-green-600">✅ Log added successfully!</div>`;
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        responseDiv.innerHTML = `<div class="text-red-600">❌ Failed to add log</div>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
